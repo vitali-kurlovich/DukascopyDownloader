@@ -100,7 +100,7 @@ extension DukascopyDownloader {
         }
 
         dispatchGroup.notify(queue: dispatchQueue) {
-            results.sort { (left, right) -> Bool in
+            results.sort { left, right -> Bool in
                 guard let left = try? left.get(),
                       let right = try? right.get()
                 else {
