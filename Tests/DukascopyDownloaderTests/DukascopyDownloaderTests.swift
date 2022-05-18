@@ -90,13 +90,6 @@ final class DukascopyDownloaderTests: XCTestCase {
 
         wait(for: [expectation], timeout: 10.0)
     }
-
-    static var allTests = [
-        ("testDownloadData", testDownloadData),
-        ("testDownloadData_1", testDownloadData_1),
-        ("testDownloadData_2", testDownloadData_2),
-        ("testDownloadInfoData", testDownloadInfoData),
-    ]
 }
 
 private let utc = TimeZone(identifier: "UTC")!
