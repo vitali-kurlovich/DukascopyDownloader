@@ -18,6 +18,8 @@ let package = Package(
         .package(url: "https://github.com/vitali-kurlovich/DukascopyURL.git", from: "1.3.0"),
 
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.9.0"),
+        
+   
 
     ],
     targets: [
@@ -28,6 +30,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
+
                 "DukascopyURL",
             ]
         ),
