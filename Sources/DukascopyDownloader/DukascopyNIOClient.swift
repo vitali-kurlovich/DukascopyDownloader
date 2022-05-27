@@ -64,7 +64,7 @@ extension DukascopyNIOClient {
     func tasks(format: Format, for filename: String, range: Range<Date>) throws -> [FetchTask] {
         let quotes = urlFactory.quotes(format: format, for: filename, range: range)
 
-        return try quotes.map { (url: URL, range: Range<Date>) -> FetchTask in
+        return try quotes.map { (url: URL, range: Range<Date>, _, _) -> FetchTask in
             let request = try HTTPClient.Request(url: url)
 
             let future = client.execute(request: request)
