@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.6
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.4.0"),
 
-        .package(url: "https://github.com/vitali-kurlovich/DukascopyURL.git", from: "1.3.0"),
+        .package(url: "https://github.com/vitali-kurlovich/DukascopyURL.git", from: "2.1.0"),
 
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.9.0"),
         
