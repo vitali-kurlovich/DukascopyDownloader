@@ -11,10 +11,10 @@ import NIOHTTP1
 
 public
 final class DukascopyNIOClient {
-    public typealias Format = URLFactory.Format
+    public typealias Format = DukascopyRemoteURL.Format
 
     private let client: HTTPClient
-    private let urlFactory = URLFactory()
+    private let urlFactory = DukascopyRemoteURL()
 
     public init(eventLoopGroup: EventLoopGroup,
                 configuration: HTTPClient.Configuration = .init(),
@@ -51,54 +51,53 @@ public
 extension DukascopyNIOClient {
     struct FetchTask {
         public let format: Format
-        public let currency: String
+        public let filename: String
         public let period: Range<Date>
-        // public let future: EventLoopFuture<HTTPClient.Response>
 
-        public let result: EventLoopFuture<(data: ByteBuffer?, currency: String, period: Range<Date>)>
+        public let result: EventLoopFuture<(data: ByteBuffer?, filename: String, period: Range<Date>)>
     }
 
     enum FetchTaskError: Error {
         case requestFailed(HTTPResponseStatus)
     }
 
-    func tasks(format: Format, for currency: String, range: Range<Date>) throws -> [FetchTask] {
-        let quotes = urlFactory.quotes(format: format, for: currency, range: range)
+    func tasks(format: Format, for filename: String, range: Range<Date>) throws -> [FetchTask] {
+        let quotes = urlFactory.quotes(format: format, for: filename, range: range)
 
         return try quotes.map { (url: URL, range: Range<Date>) -> FetchTask in
             let request = try HTTPClient.Request(url: url)
 
             let future = client.execute(request: request)
 
-            let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, currency: String, period: Range<Date>) in
+            let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
                 let status = respose.status
                 if respose.status != .ok {
                     throw FetchTaskError.requestFailed(status)
                 }
 
-                return (data: respose.body, currency: currency, period: range)
+                return (data: respose.body, filename: filename, period: range)
             }
 
-            return .init(format: format, currency: currency, period: range, result: result)
+            return .init(format: format, filename: filename, period: range, result: result)
         }
     }
 
-    func task(format: Format, for currency: String, date: Date) throws -> FetchTask {
-        let quotes = urlFactory.quotes(format: format, for: currency, date: date)
+    func task(format: Format, for filename: String, date: Date) throws -> FetchTask {
+        let quotes = urlFactory.quotes(format: format, for: filename, date: date)
 
         let request = try HTTPClient.Request(url: quotes.url)
 
         let future = client.execute(request: request)
 
-        let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, currency: String, period: Range<Date>) in
+        let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
             let status = respose.status
             if respose.status != .ok {
                 throw FetchTaskError.requestFailed(status)
             }
 
-            return (data: respose.body, currency: currency, period: quotes.range)
+            return (data: respose.body, filename: filename, period: quotes.range)
         }
 
-        return .init(format: format, currency: currency, period: quotes.range, result: result)
+        return .init(format: format, filename: filename, period: quotes.range, result: result)
     }
 }
