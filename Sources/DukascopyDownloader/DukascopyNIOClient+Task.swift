@@ -56,7 +56,7 @@ extension DukascopyNIOClient {
 
         let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
             let status = respose.status
-            if respose.status != .ok {
+            guard status == .ok else {
                 throw FetchTaskError.requestFailed(status)
             }
 
@@ -64,5 +64,33 @@ extension DukascopyNIOClient {
         }
 
         return .init(format: format, filename: filename, period: quotes.range, result: result)
+    }
+}
+
+public
+extension DukascopyNIOClient {
+    struct InfoTask {}
+
+    func instrumentsTask() throws -> EventLoopFuture<ByteBuffer?> {
+        let instruments = urlFactory.instruments()
+
+        var request = try HTTPClient.Request(url: instruments.url)
+        let headers = instruments.headers.map { (key: String, value: String) in
+            (key, value)
+        }
+        request.headers = .init(headers)
+
+        let future = client.execute(request: request)
+
+        return future.flatMapThrowing { respose throws -> ByteBuffer? in
+
+            let status = respose.status
+
+            guard status == .ok else {
+                throw FetchTaskError.requestFailed(status)
+            }
+
+            return respose.body
+        }
     }
 }
