@@ -98,3 +98,16 @@ extension DukascopyNIOClient {
         return .init(result: result)
     }
 }
+
+
+import DukascopyModel
+
+extension DukascopyNIOClient {
+    func quotesTicks(for instrument:Instrument, date: Date) throws {
+        
+        //try task(format: format, for: instrument.history.filename, date: date)
+        
+        
+        
+    }
+}
