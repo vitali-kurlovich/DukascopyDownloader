@@ -21,7 +21,7 @@ let package = Package(
 
         .package(url: "https://github.com/vitali-kurlovich/DukascopyModel.git", from: "1.9.0"),
 
-        .package(url: "https://github.com/vitali-kurlovich/DukascopyDecoder.git", from: "2.1.0"),
+        .package(url: "https://github.com/vitali-kurlovich/DukascopyDecoder.git", from: "2.2.0"),
 
     ],
     targets: [
