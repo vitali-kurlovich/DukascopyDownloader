@@ -113,12 +113,12 @@ class DukascopyNIOClientTests: XCTestCase {
 
         let task = try downloader.instrumentsTask()
 
-        task.whenSuccess { buffer in
+        task.result.whenSuccess { buffer in
             XCTAssertNotNil(buffer)
             expectation.fulfill()
         }
 
-        task.whenFailure { error in
+        task.result.whenFailure { error in
             XCTFail(error.localizedDescription)
         }
 
