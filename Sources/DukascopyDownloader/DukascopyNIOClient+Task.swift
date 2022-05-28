@@ -69,9 +69,11 @@ extension DukascopyNIOClient {
 
 public
 extension DukascopyNIOClient {
-    struct InfoTask {}
+    struct InfoTask {
+        public let result: EventLoopFuture<ByteBuffer?>
+    }
 
-    func instrumentsTask() throws -> EventLoopFuture<ByteBuffer?> {
+    func instrumentsTask() throws -> InfoTask {
         let instruments = urlFactory.instruments()
 
         var request = try HTTPClient.Request(url: instruments.url)
@@ -82,7 +84,7 @@ extension DukascopyNIOClient {
 
         let future = client.execute(request: request)
 
-        return future.flatMapThrowing { respose throws -> ByteBuffer? in
+        let result = future.flatMapThrowing { respose throws -> ByteBuffer? in
 
             let status = respose.status
 
@@ -92,5 +94,7 @@ extension DukascopyNIOClient {
 
             return respose.body
         }
+
+        return .init(result: result)
     }
 }
