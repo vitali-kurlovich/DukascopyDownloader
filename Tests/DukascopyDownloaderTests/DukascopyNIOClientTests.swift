@@ -124,6 +124,25 @@ class DukascopyNIOClientTests: XCTestCase {
 
         wait(for: [expectation], timeout: 10.0)
     }
+
+    func testDownloadInstrumentGroups() throws {
+        let expectation = XCTestExpectation(description: "Download instruments groups")
+
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+
+        let result = try downloader.fetchInstruments()
+
+        result.whenSuccess { groups in
+            XCTAssertFalse(groups.isEmpty)
+            expectation.fulfill()
+        }
+
+        result.whenFailure { error in
+            XCTFail(error.localizedDescription)
+        }
+
+        wait(for: [expectation], timeout: 10.0)
+    }
 }
 
 private let utc = TimeZone(identifier: "UTC")!
