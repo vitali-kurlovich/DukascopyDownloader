@@ -8,6 +8,7 @@
 import AsyncHTTPClient
 
 @testable import DukascopyDownloader
+import DukascopyModel
 import NIO
 import XCTest
 
@@ -19,7 +20,7 @@ class DukascopyNIOClientTests: XCTestCase {
 
         let date = formatter.date(from: "04-04-2019 11:00")!
 
-        let task = try downloader.task(format: .ticks, for: "EURUSD", date: date)
+        let task = downloader.task(format: .ticks, for: "EURUSD", date: date)
 
         XCTAssertEqual(task.period, date ..< formatter.date(from: "04-04-2019 12:00")!)
 
@@ -48,7 +49,7 @@ class DukascopyNIOClientTests: XCTestCase {
 
         let date = formatter.date(from: "06-01-2019 12:00")!
 
-        let task = try downloader.task(format: .ticks, for: "EURUSD", date: date)
+        let task = downloader.task(format: .ticks, for: "EURUSD", date: date)
 
         XCTAssertEqual(task.period, date ..< formatter.date(from: "06-01-2019 13:00")!)
 
@@ -76,7 +77,7 @@ class DukascopyNIOClientTests: XCTestCase {
         let begin = formatter.date(from: "04-04-2019 11:00")!
         let end = formatter.date(from: "04-04-2019 19:00")!
 
-        let tasks = try downloader.tasks(format: .ticks, for: "EURUSD", range: begin ..< end)
+        let tasks = downloader.tasks(format: .ticks, for: "EURUSD", range: begin ..< end)
 
         XCTAssertEqual(tasks.count, 8)
 
@@ -111,7 +112,7 @@ class DukascopyNIOClientTests: XCTestCase {
 
         let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
 
-        let task = try downloader.instrumentsTask()
+        let task = downloader.instrumentsTask()
 
         task.result.whenSuccess { buffer in
             XCTAssertNotNil(buffer)
@@ -130,10 +131,53 @@ class DukascopyNIOClientTests: XCTestCase {
 
         let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
 
-        let result = try downloader.fetchInstruments()
+        let result = downloader.fetchInstruments()
 
         result.whenSuccess { groups in
             XCTAssertFalse(groups.isEmpty)
+            expectation.fulfill()
+        }
+
+        result.whenFailure { error in
+            XCTFail(error.localizedDescription)
+        }
+
+        wait(for: [expectation], timeout: 20.0)
+    }
+
+    func testFetchQuoteTicks() throws {
+        let expectation = XCTestExpectation(description: "Download ticks")
+
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+
+        let groups = downloader.fetchInstruments()
+
+        let instrument = groups.flatMapThrowing { groups -> Instrument in
+            let root = Group(id: "", title: "", groups: groups)
+
+            let instrument = root.first { instrument in
+                instrument.symbol == "USD/THB"
+            }
+
+            guard let thb = instrument else {
+                throw NSError()
+            }
+
+            return thb
+        }
+
+        let begin = formatter.date(from: "02-01-2020 01:00")!
+
+        let result = instrument.flatMap { instrument in
+
+            downloader.fetchQuoteTicks(for: instrument, date: begin)
+        }
+
+        result.whenSuccess { (instrument: Instrument, _: Range<Date>, ticks: [Tick]) in
+            XCTAssertEqual(instrument.symbol, "USD/THB")
+
+            XCTAssertFalse(ticks.isEmpty)
+
             expectation.fulfill()
         }
 
