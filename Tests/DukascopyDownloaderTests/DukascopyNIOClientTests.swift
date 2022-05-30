@@ -12,6 +12,10 @@ import DukascopyModel
 import NIO
 import XCTest
 
+enum TestError: Error {
+    case doNotFindInstrument
+}
+
 class DukascopyNIOClientTests: XCTestCase {
     func testDownloadData() throws {
         let expectation = XCTestExpectation(description: "Download Dukacopy bi5 file")
@@ -160,7 +164,7 @@ class DukascopyNIOClientTests: XCTestCase {
             }
 
             guard let thb = instrument else {
-                throw NSError()
+                throw TestError.doNotFindInstrument
             }
 
             return thb
