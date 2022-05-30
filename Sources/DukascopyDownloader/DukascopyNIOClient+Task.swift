@@ -26,11 +26,11 @@ extension DukascopyNIOClient {
         case requestFailed(HTTPResponseStatus)
     }
 
-    func tasks(format: Format, for filename: String, range: Range<Date>) throws -> [FetchTask] {
+    func tasks(format: Format, for filename: String, range: Range<Date>) -> [FetchTask] {
         let quotes = urlFactory.quotes(format: format, for: filename, range: range)
 
-        return try quotes.map { (url: URL, range: Range<Date>, _, _) -> FetchTask in
-            let request = try HTTPClient.Request(url: url)
+        return quotes.map { (url: URL, range: Range<Date>, _, _) -> FetchTask in
+            let request = try! HTTPClient.Request(url: url)
 
             let future = client.execute(request: request)
 
@@ -47,10 +47,10 @@ extension DukascopyNIOClient {
         }
     }
 
-    func task(format: Format, for filename: String, date: Date) throws -> FetchTask {
+    func task(format: Format, for filename: String, date: Date) -> FetchTask {
         let quotes = urlFactory.quotes(format: format, for: filename, date: date)
 
-        let request = try HTTPClient.Request(url: quotes.url)
+        let request = try! HTTPClient.Request(url: quotes.url)
 
         let future = client.execute(request: request)
 
@@ -73,10 +73,10 @@ extension DukascopyNIOClient {
         public let result: EventLoopFuture<ByteBuffer?>
     }
 
-    func instrumentsTask() throws -> InfoTask {
+    func instrumentsTask() -> InfoTask {
         let instruments = urlFactory.instruments()
 
-        var request = try HTTPClient.Request(url: instruments.url)
+        var request = try! HTTPClient.Request(url: instruments.url)
         let headers = instruments.headers.map { (key: String, value: String) in
             (key, value)
         }
