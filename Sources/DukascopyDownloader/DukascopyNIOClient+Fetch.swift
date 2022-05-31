@@ -98,13 +98,18 @@ extension DukascopyNIOClient {
                 }
 
                 let instrument = items.first!.instrument
-                let period = items.first!.period.lowerBound ..< items.last!.period.upperBound
+                let range = items.first!.period.lowerBound ..< items.last!.period.upperBound
 
-                let ticks = items.flatMap { (_, _, ticks: [Tick]) -> [Tick] in
-                    ticks
+                let ticks = items.flatMap { (_, period: Range<Date>, ticks: [Tick]) -> [Tick] in
+
+                    let offset = Int32(period.lowerBound.timeIntervalSince(range.lowerBound)) * 1000
+
+                    return ticks.lazy.map { tick in
+                        Tick(time: tick.time + offset, askp: tick.askp, bidp: tick.bidp, askv: tick.askv, bidv: tick.bidv)
+                    }
                 }
 
-                return (instrument: instrument, period: period, ticks: ticks)
+                return (instrument: instrument, period: range, ticks: ticks)
             }
     }
 }
