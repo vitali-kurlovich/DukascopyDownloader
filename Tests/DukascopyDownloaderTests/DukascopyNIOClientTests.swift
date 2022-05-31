@@ -180,7 +180,84 @@ class DukascopyNIOClientTests: XCTestCase {
         result.whenSuccess { (instrument: Instrument, _: Range<Date>, ticks: [Tick]) in
             XCTAssertEqual(instrument.symbol, "USD/THB")
 
-            XCTAssertFalse(ticks.isEmpty)
+            XCTAssertEqual(ticks.count, 1096)
+
+            // 02.01.2020 04:00:00.138 GMT+0300,30.1296,30.113400000000002,1,1
+            let firstTick = ticks.first!
+            XCTAssertEqual(firstTick.time, 138)
+            XCTAssertEqual(firstTick.askp, 301_296)
+            XCTAssertEqual(firstTick.bidp, 301_134)
+            XCTAssertEqual(firstTick.askv, 1)
+            XCTAssertEqual(firstTick.bidv, 1)
+
+            // 02.01.2020 04:59:53.390 GMT+0300,30.1186,30.107400000000002,1.1,1.1
+            let lastTick = ticks.last!
+
+            XCTAssertEqual(lastTick.time, (59 * 60 + 53) * 1000 + 390)
+            XCTAssertEqual(lastTick.askp, 301_186)
+            XCTAssertEqual(lastTick.bidp, 301_074)
+            XCTAssertEqual(lastTick.askv, 1.1)
+            XCTAssertEqual(lastTick.bidv, 1.1)
+
+            expectation.fulfill()
+        }
+
+        result.whenFailure { error in
+            XCTFail(error.localizedDescription)
+        }
+
+        wait(for: [expectation], timeout: 10.0)
+    }
+
+    func testFetchQuoteTicks_1() throws {
+        let expectation = XCTestExpectation(description: "Download ticks")
+
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+
+        let groups = downloader.fetchInstruments()
+
+        let instrument = groups.flatMapThrowing { groups -> Instrument in
+            let root = Group(id: "", title: "", groups: groups)
+
+            let instrument = root.first { instrument in
+                instrument.symbol == "USD/THB"
+            }
+
+            guard let thb = instrument else {
+                throw TestError.doNotFindInstrument
+            }
+
+            return thb
+        }
+
+        let begin = formatter.date(from: "02-01-2020 01:00")!
+        let end = formatter.date(from: "02-01-2020 03:00")!
+
+        let result = instrument.flatMap { instrument in
+
+            downloader.fetchQuoteTicks(for: instrument, range: begin ..< end)
+        }
+
+        result.whenSuccess { (instrument: Instrument, _: Range<Date>, ticks: [Tick]) in
+            XCTAssertEqual(instrument.symbol, "USD/THB")
+
+            XCTAssertEqual(ticks.count, 1096 + 695)
+
+            // 02.01.2020 04:00:00.138 GMT+0300,30.1296,30.113400000000002,1,1
+            let firstTick = ticks.first!
+            XCTAssertEqual(firstTick.time, 138)
+            XCTAssertEqual(firstTick.askp, 301_296)
+            XCTAssertEqual(firstTick.bidp, 301_134)
+            XCTAssertEqual(firstTick.askv, 1)
+            XCTAssertEqual(firstTick.bidv, 1)
+
+            let lastTick = ticks.last!
+
+            XCTAssertEqual(lastTick.time, (60 * 60) * 1000 + 3_599_269)
+            XCTAssertEqual(lastTick.askp, 301_116)
+            XCTAssertEqual(lastTick.bidp, 301_004)
+            XCTAssertEqual(lastTick.askv, 1)
+            XCTAssertEqual(lastTick.bidv, 1)
 
             expectation.fulfill()
         }
