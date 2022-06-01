@@ -10,6 +10,10 @@ import NIOHTTP1
 
 private var urlFactory = DukascopyRemoteURL()
 
+struct CacheControlParser {
+    // "max-age=604800"
+}
+
 public
 extension DukascopyNIOClient {
     typealias Format = DukascopyRemoteURL.Format
@@ -39,6 +43,8 @@ extension DukascopyNIOClient {
                 if respose.status != .ok {
                     throw FetchTaskError.requestFailed(status)
                 }
+
+                // let headers = respose.headers
 
                 return (data: respose.body, filename: filename, period: range)
             }
@@ -81,8 +87,15 @@ extension DukascopyNIOClient {
             (key, value)
         }
         request.headers = .init(headers)
-
-        let future = client.execute(request: request)
+        
+        
+        let future = cache.value(forKey: .init(request)).flatMapWithEventLoop { response, eventLoop -> EventLoopFuture<HTTPClient.Response> in
+            if let response = response {
+               return eventLoop.makeSucceededFuture(response)
+            }
+            
+            return self.client.execute(request: request)
+        }
 
         let result = future.flatMapThrowing { respose throws -> ByteBuffer? in
 
@@ -91,6 +104,10 @@ extension DukascopyNIOClient {
             guard status == .ok else {
                 throw FetchTaskError.requestFailed(status)
             }
+            
+            let cost = respose.body?.storageCapacity ?? 1
+            
+            self.cache.setValue(respose, forKey: .init(request), cost: cost)
 
             return respose.body
         }
