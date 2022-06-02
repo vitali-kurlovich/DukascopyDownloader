@@ -7,12 +7,13 @@ import AsyncHTTPClient
 import Foundation
 import Logging
 import NIO
+import KeyValueCache
 
 public
 final class DukascopyNIOClient {
     internal let client: HTTPClient
 
-    internal let cache: NIOCache<RequestKey, HTTPClient.Response>
+    internal let cache: KeyValueCache<RequestKey, HTTPClient.Response>
 
     public init(eventLoopGroupProvider: HTTPClient.EventLoopGroupProvider,
                 configuration: HTTPClient.Configuration = .init(),
@@ -20,8 +21,8 @@ final class DukascopyNIOClient {
     {
         client = HTTPClient(eventLoopGroupProvider: eventLoopGroupProvider, configuration: configuration, backgroundActivityLogger: backgroundActivityLogger)
 
-        let eventLoop = client.eventLoopGroup.any()
-        cache = .init(eventLoop)
+        let eventLoopGroup = client.eventLoopGroup.any()
+        cache = .init(eventLoopGroupProvider: .shared(eventLoopGroup))
     }
 
     public init(eventLoopGroupProvider: HTTPClient.EventLoopGroupProvider,
@@ -29,8 +30,8 @@ final class DukascopyNIOClient {
     {
         client = HTTPClient(eventLoopGroupProvider: eventLoopGroupProvider, configuration: configuration)
 
-        let eventLoop = client.eventLoopGroup.any()
-        cache = .init(eventLoop)
+        let eventLoopGroup = client.eventLoopGroup.any()
+        cache = .init(eventLoopGroupProvider: .shared(eventLoopGroup))
     }
 
     deinit {
