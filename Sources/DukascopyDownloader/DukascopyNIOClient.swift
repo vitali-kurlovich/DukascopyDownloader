@@ -5,9 +5,9 @@
 import AsyncHTTPClient
 
 import Foundation
+import KeyValueCache
 import Logging
 import NIO
-import KeyValueCache
 
 public
 final class DukascopyNIOClient {
