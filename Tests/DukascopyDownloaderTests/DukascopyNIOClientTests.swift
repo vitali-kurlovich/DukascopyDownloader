@@ -112,22 +112,44 @@ class DukascopyNIOClientTests: XCTestCase {
     }
 
     func testDownloadInstruments() throws {
-        let expectation = XCTestExpectation(description: "Download instruments groups")
-
         let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+
+        var teskExp = XCTestExpectation(description: "Download instruments groups")
 
         let task = downloader.instrumentsTask()
 
+        var resultBuffer: ByteBuffer?
+
         task.result.whenSuccess { buffer in
             XCTAssertNotNil(buffer)
-            expectation.fulfill()
+
+            resultBuffer = buffer
+            teskExp.fulfill()
         }
 
         task.result.whenFailure { error in
             XCTFail(error.localizedDescription)
         }
 
-        wait(for: [expectation], timeout: 10.0)
+        wait(for: [teskExp], timeout: 10.0)
+
+        Thread.sleep(forTimeInterval: 2)
+
+        teskExp = XCTestExpectation(description: "Download instruments groups using cache")
+
+        let cacheTask = downloader.instrumentsTask()
+
+        cacheTask.result.whenSuccess { buffer in
+            XCTAssertNotNil(buffer)
+            XCTAssertEqual(resultBuffer, buffer)
+            teskExp.fulfill()
+        }
+
+        cacheTask.result.whenFailure { error in
+            XCTFail(error.localizedDescription)
+        }
+
+        wait(for: [teskExp], timeout: 10.0)
     }
 
     func testDownloadInstrumentGroups() throws {
