@@ -36,7 +36,7 @@ extension DukascopyNIOClient {
         return quotes.map { (url: URL, range: Range<Date>, _, _) -> FetchTask in
             let request = try! HTTPClient.Request(url: url)
 
-            let future = client.execute(request: request)
+            let future = task(for: request)
 
             let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
                 let status = respose.status
@@ -58,7 +58,7 @@ extension DukascopyNIOClient {
 
         let request = try! HTTPClient.Request(url: quotes.url)
 
-        let future = client.execute(request: request)
+        let future = task(for: request)
 
         let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
             let status = respose.status
@@ -87,13 +87,12 @@ extension DukascopyNIOClient {
             (key, value)
         }
         request.headers = .init(headers)
-        
-        
+
         let future = cache.value(forKey: .init(request)).flatMapWithEventLoop { response, eventLoop -> EventLoopFuture<HTTPClient.Response> in
             if let response = response {
-               return eventLoop.makeSucceededFuture(response)
+                return eventLoop.makeSucceededFuture(response)
             }
-            
+
             return self.client.execute(request: request)
         }
 
@@ -104,14 +103,38 @@ extension DukascopyNIOClient {
             guard status == .ok else {
                 throw FetchTaskError.requestFailed(status)
             }
-            
+
             let cost = respose.body?.storageCapacity ?? 1
-            
+
             self.cache.setValue(respose, forKey: .init(request), cost: cost)
 
             return respose.body
         }
 
         return .init(result: result)
+    }
+}
+
+internal
+extension DukascopyNIOClient {
+    func task(for request: HTTPClient.Request) -> EventLoopFuture<HTTPClient.Response> {
+        let key = RequestKey(request)
+        return cache.value(forKey: key).flatMapWithEventLoop { response, eventLoop -> EventLoopFuture<HTTPClient.Response> in
+            if let response = response {
+                return eventLoop.makeSucceededFuture(response)
+            }
+
+            return self.client.execute(request: request).map { response -> HTTPClient.Response in
+
+                let cost = response.body?.storageCapacity ?? 1
+
+                let now = Date()
+                let expireDate = now.addingTimeInterval(5)
+                
+                self.cache.setValue(response, forKey: key, expireDate: expireDate, cost: cost)
+
+                return response
+            }
+        }
     }
 }
