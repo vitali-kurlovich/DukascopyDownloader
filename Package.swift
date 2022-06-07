@@ -23,7 +23,7 @@ let package = Package(
 
         .package(url: "https://github.com/vitali-kurlovich/DukascopyDecoder.git", from: "2.5.0"),
 
-        .package(url: "https://github.com/vitali-kurlovich/KeyValueCache.git", from: "1.0.0"),
+        .package(url: "https://github.com/vitali-kurlovich/KeyValueCache.git", from: "1.1.0"),
 
     ],
     targets: [
