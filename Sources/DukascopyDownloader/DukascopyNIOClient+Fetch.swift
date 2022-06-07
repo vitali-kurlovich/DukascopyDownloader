@@ -11,10 +11,23 @@ import NIO
 public
 extension DukascopyNIOClient {
     func fetchInstruments() -> EventLoopFuture<[Group]> {
+        let groupsFuture = groupsCache.value()
+
+        return groupsFuture.flatMapWithEventLoop { groups, eventLoop -> EventLoopFuture<[Group]> in
+            if let groups = groups {
+                return eventLoop.makeSucceededFuture(groups)
+            }
+            return self.fetchRemoteInstruments()
+        }
+    }
+}
+
+private
+extension DukascopyNIOClient {
+    func fetchRemoteInstruments() -> EventLoopFuture<[Group]> {
         let task = instrumentsTask()
 
         let result = task.result.flatMapThrowing { buffer -> [Group] in
-
             guard let buffer = buffer else {
                 return []
             }
@@ -22,6 +35,12 @@ extension DukascopyNIOClient {
             let decoder = InstrumentsGroupsDecoder()
 
             return try decoder.decode(with: buffer)
+        }.map { groups -> [Group] in
+
+            let now = Date()
+            self.groupsCache.setValue(groups, expireDate: now.addingTimeInterval(60 * 60))
+
+            return groups
         }
 
         return result
