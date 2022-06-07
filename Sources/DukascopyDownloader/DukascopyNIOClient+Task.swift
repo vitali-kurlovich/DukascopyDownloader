@@ -10,10 +10,6 @@ import NIOHTTP1
 
 private var urlFactory = DukascopyRemoteURL()
 
-struct CacheControlParser {
-    // "max-age=604800"
-}
-
 public
 extension DukascopyNIOClient {
     typealias Format = DukascopyRemoteURL.Format
@@ -44,8 +40,6 @@ extension DukascopyNIOClient {
                 if respose.status != .ok {
                     throw FetchTaskError.requestFailed(status)
                 }
-
-                // let headers = respose.headers
 
                 return (data: respose.body, filename: filename, period: range)
             }
