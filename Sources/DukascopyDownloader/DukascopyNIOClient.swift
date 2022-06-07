@@ -38,19 +38,3 @@ final class DukascopyNIOClient {
         try? client.syncShutdown()
     }
 }
-
-public
-extension DukascopyNIOClient {
-    convenience init(eventLoopGroup: EventLoopGroup,
-                     configuration: HTTPClient.Configuration = .init(),
-                     backgroundActivityLogger: Logger)
-    {
-        self.init(eventLoopGroupProvider: .shared(eventLoopGroup), configuration: configuration, backgroundActivityLogger: backgroundActivityLogger)
-    }
-
-    convenience init(eventLoopGroup: EventLoopGroup,
-                     configuration: HTTPClient.Configuration = .init())
-    {
-        self.init(eventLoopGroupProvider: .shared(eventLoopGroup), configuration: configuration)
-    }
-}
