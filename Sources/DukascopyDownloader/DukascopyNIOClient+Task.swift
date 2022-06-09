@@ -34,14 +34,9 @@ extension DukascopyNIOClient {
 
             let future = task(for: request)
 
-            let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
-                let status = respose.status
+            let result = future.map { respose -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
 
-                if respose.status != .ok {
-                    throw FetchTaskError.requestFailed(status)
-                }
-
-                return (data: respose.body, filename: filename, period: range)
+                (data: respose.body, filename: filename, period: range)
             }
 
             return .init(format: format, filename: filename, period: range, result: result)
@@ -55,13 +50,9 @@ extension DukascopyNIOClient {
 
         let future = task(for: request)
 
-        let result = future.flatMapThrowing { respose throws -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
-            let status = respose.status
-            guard status == .ok else {
-                throw FetchTaskError.requestFailed(status)
-            }
+        let result = future.map { respose -> (data: ByteBuffer?, filename: String, period: Range<Date>) in
 
-            return (data: respose.body, filename: filename, period: quotes.range)
+            (data: respose.body, filename: filename, period: quotes.range)
         }
 
         return .init(format: format, filename: filename, period: quotes.range, result: result)
@@ -85,15 +76,9 @@ extension DukascopyNIOClient {
 
         let future = task(for: request)
 
-        let result = future.flatMapThrowing { respose throws -> ByteBuffer? in
+        let result = future.map { respose -> ByteBuffer? in
 
-            let status = respose.status
-
-            guard status == .ok else {
-                throw FetchTaskError.requestFailed(status)
-            }
-
-            return respose.body
+            respose.body
         }
 
         return .init(result: result)
@@ -109,12 +94,12 @@ extension DukascopyNIOClient {
                 return eventLoop.makeSucceededFuture(response)
             }
 
-            return self.client.execute(request: request).map { response -> HTTPClient.Response in
+            return self.client.execute(request: request).flatMapThrowing { response -> HTTPClient.Response in
 
                 let status = response.status
 
-                guard status == .ok else {
-                    return response
+                guard response.status == .ok else {
+                    throw FetchTaskError.requestFailed(status)
                 }
 
                 let cost = response.body?.storageCapacity ?? 1
