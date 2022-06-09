@@ -20,7 +20,3 @@ extension RequestExecutor {
 import AsyncHTTPClient
 
 protocol HTTPRequestExecutor: RequestExecutor where Request == HTTPClient.Request, Response == HTTPClient.Response {}
-
-extension HTTPRequestExecutor {
-    func syncShutdown() throws {}
-}
