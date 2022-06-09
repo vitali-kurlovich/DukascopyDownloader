@@ -4,21 +4,25 @@
 
 import AsyncHTTPClient
 import Foundation
+import Logging
 import NIO
 
 final class HTTPClientRequestExecutorImpl: HTTPRequestExecutorImpl {
     let client: HTTPClient
 
-    init(_ client: HTTPClient) {
-        self.client = client
+    init(eventLoopGroup: EventLoopGroup, backgroundActivityLogger: Logger) {
+        client = HTTPClient(eventLoopGroupProvider: .shared(eventLoopGroup), backgroundActivityLogger: backgroundActivityLogger)
     }
 
-    override
-    func execute(request: HTTPClient.Request, deadline: NIODeadline?) -> EventLoopFuture<HTTPClient.Response> {
+    init(eventLoopGroup: EventLoopGroup) {
+        client = HTTPClient(eventLoopGroupProvider: .shared(eventLoopGroup))
+    }
+
+    override func execute(request: HTTPClient.Request, deadline: NIODeadline?) -> EventLoopFuture<HTTPClient.Response> {
         client.execute(request: request, deadline: deadline)
     }
 
-    func syncShutdown() throws {
-        try client.syncShutdown()
+    deinit {
+        try? client.syncShutdown()
     }
 }
