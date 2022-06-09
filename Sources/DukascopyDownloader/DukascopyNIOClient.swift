@@ -20,20 +20,22 @@ final class DukascopyNIOClient {
     }
 
     internal
-    init(_ client: HTTPRequestExecutorImpl, eventLoopGroup: EventLoopGroup) {
+    init(_ client: HTTPRequestExecutorImpl, eventLoopGroupProvider: ClientEventLoopGroupProvider) {
+        self.eventLoopGroupProvider = eventLoopGroupProvider
+
         self.client = client
 
-        cache = .init(eventLoopGroupProvider: .shared(eventLoopGroup))
-        groupsCache = .init(eventLoopGroupProvider: .shared(eventLoopGroup))
+        cache = .init(eventLoopGroupProvider: .shared(eventLoopGroupProvider.eventLoopGroup))
+        groupsCache = .init(eventLoopGroupProvider: .shared(eventLoopGroupProvider.eventLoopGroup))
     }
+
+    /// public let eventLoopGroup: EventLoopGroup
+    internal let eventLoopGroupProvider: ClientEventLoopGroupProvider
 
     internal let client: HTTPRequestExecutorImpl
+
     internal let cache: KeyValueCache<RequestKey, HTTPClient.Response>
     internal let groupsCache: OneValueCache<[Group]>
-
-    deinit {
-        try? client.syncShutdown()
-    }
 }
 
 public
@@ -41,36 +43,20 @@ extension DukascopyNIOClient {
     convenience init(eventLoopGroupProvider: EventLoopGroupProvider,
                      backgroundActivityLogger: Logger)
     {
-        let groupProvider: HTTPClient.EventLoopGroupProvider
-
-        switch eventLoopGroupProvider {
-        case let .shared(group):
-            groupProvider = .shared(group)
-        case .createNew:
-            groupProvider = .createNew
-        }
-
-        let client = HTTPClient(eventLoopGroupProvider: groupProvider, backgroundActivityLogger: backgroundActivityLogger)
-
-        let eventLoopGroup = client.eventLoopGroup.any()
-
-        self.init(HTTPClientRequestExecutorImpl(client), eventLoopGroup: eventLoopGroup)
+        let provider = ClientEventLoopGroupProvider(eventLoopGroupProvider)
+        let imp = HTTPClientRequestExecutorImpl(eventLoopGroup: provider.eventLoopGroup, backgroundActivityLogger: backgroundActivityLogger)
+        self.init(imp, eventLoopGroupProvider: provider)
     }
 
     convenience init(eventLoopGroupProvider: EventLoopGroupProvider) {
-        let groupProvider: HTTPClient.EventLoopGroupProvider
+        let provider = ClientEventLoopGroupProvider(eventLoopGroupProvider)
 
-        switch eventLoopGroupProvider {
-        case let .shared(group):
-            groupProvider = .shared(group)
-        case .createNew:
-            groupProvider = .createNew
-        }
+        let imp = HTTPClientRequestExecutorImpl(eventLoopGroup: provider.eventLoopGroup)
 
-        let client = HTTPClient(eventLoopGroupProvider: groupProvider)
+        self.init(imp, eventLoopGroupProvider: provider)
+    }
 
-        let eventLoopGroup = client.eventLoopGroup.any()
-
-        self.init(HTTPClientRequestExecutorImpl(client), eventLoopGroup: eventLoopGroup)
+    var eventLoopGroup: EventLoopGroup {
+        eventLoopGroupProvider.eventLoopGroup
     }
 }
