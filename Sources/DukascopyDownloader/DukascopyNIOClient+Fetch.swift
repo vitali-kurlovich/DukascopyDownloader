@@ -89,9 +89,7 @@ extension DukascopyNIOClient {
             }
         }
 
-        let eventLoop = futures.first!.eventLoop
-
-        return EventLoopFuture.whenAllComplete(futures, on: eventLoop)
+        return EventLoopFuture.whenAllComplete(futures, on: eventLoopGroup.next())
             .flatMapThrowing { results -> (instrument: Instrument, period: Range<Date>, ticks: [Tick]) in
 
                 typealias QuoteItem = (instrument: Instrument, period: Range<Date>, ticks: [Tick])
