@@ -106,9 +106,10 @@ class DukascopyNIOClientTests: XCTestCase {
 
         allTasks.whenFailure { error in
             XCTFail(error.localizedDescription)
+            expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 10.0)
+        wait(for: [expectation], timeout: 20.0)
 
         try eventGroup.syncShutdownGracefully()
     }
@@ -171,6 +172,35 @@ class DukascopyNIOClientTests: XCTestCase {
         }
 
         wait(for: [expectation], timeout: 20.0)
+    }
+
+    func testDetchInstrument() throws {
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+
+        let usdThbInstrument = downloader.fetchInstrument(by: "USD/THB", caseInsensitive: false)
+
+        let expUSDTHB = XCTestExpectation(description: "Fetch USD/THB instrument")
+
+        usdThbInstrument.whenSuccess { instrument in
+            XCTAssertEqual(instrument.symbol, "USD/THB")
+            expUSDTHB.fulfill()
+        }
+
+        usdThbInstrument.whenFailure { error in
+            XCTFail(error.localizedDescription)
+            expUSDTHB.fulfill()
+        }
+
+        wait(for: [expUSDTHB], timeout: 10.0)
+
+        let expFail = XCTestExpectation(description: "Fetch non-existent instrument")
+        let falilInstrument = downloader.fetchInstrument(by: "FailSymbol___$")
+
+        falilInstrument.whenFailure { _ in
+            expFail.fulfill()
+        }
+
+        wait(for: [expFail], timeout: 10.0)
     }
 
     func testFetchQuoteTicks() throws {
@@ -257,7 +287,9 @@ class DukascopyNIOClientTests: XCTestCase {
     func testFetchQuoteTicks_1() throws {
         let expectation = XCTestExpectation(description: "Fetch ticks")
 
-        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+        let logger = Logger(label: "Test Logger for fitch ticks")
+
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew, backgroundActivityLogger: logger)
 
         let instrument = downloader.fetchInstrument(by: "Usd/Thb")
 
@@ -295,9 +327,10 @@ class DukascopyNIOClientTests: XCTestCase {
 
         result.whenFailure { error in
             XCTFail(error.localizedDescription)
+            expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 10.0)
+        wait(for: [expectation], timeout: 20.0)
 
         let expSymbol = XCTestExpectation(description: "Fetch ticks by symbol")
 
