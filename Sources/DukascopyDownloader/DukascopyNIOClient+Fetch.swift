@@ -89,8 +89,7 @@ extension DukascopyNIOClient {
             }
         }
 
-        let eventGroup = client.eventLoopGroup
-        let eventLoop = eventGroup.any()
+        let eventLoop = futures.first!.eventLoop
 
         return EventLoopFuture.whenAllComplete(futures, on: eventLoop)
             .flatMapThrowing { results -> (instrument: Instrument, period: Range<Date>, ticks: [Tick]) in
