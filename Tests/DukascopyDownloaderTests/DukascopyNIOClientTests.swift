@@ -9,6 +9,7 @@ import AsyncHTTPClient
 
 @testable import DukascopyDownloader
 import DukascopyModel
+import Logging
 import NIO
 import XCTest
 
@@ -75,8 +76,9 @@ class DukascopyNIOClientTests: XCTestCase {
 
     func testDownloadData_2() throws {
         let expectation = XCTestExpectation(description: "Download Dukacopy bi5 file")
+        let logger = Logging.Logger(label: "Test Logger")
 
-        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew)
+        let downloader = DukascopyNIOClient(eventLoopGroupProvider: .createNew, backgroundActivityLogger: logger)
 
         let begin = formatter.date(from: "04-04-2019 11:00")!
         let end = formatter.date(from: "04-04-2019 19:00")!
