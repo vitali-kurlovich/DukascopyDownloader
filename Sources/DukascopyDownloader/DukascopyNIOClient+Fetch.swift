@@ -11,9 +11,7 @@ import NIO
 public
 extension DukascopyNIOClient {
     func fetchInstruments() -> EventLoopFuture<[Group]> {
-        let groupsFuture = groupsCache.value()
-
-        return groupsFuture.flatMapWithEventLoop { groups, eventLoop -> EventLoopFuture<[Group]> in
+        cache.groups().flatMapWithEventLoop { groups, eventLoop -> EventLoopFuture<[Group]> in
             if let groups = groups {
                 return eventLoop.makeSucceededFuture(groups)
             }
@@ -38,7 +36,7 @@ extension DukascopyNIOClient {
         }.map { groups -> [Group] in
 
             let now = Date()
-            self.groupsCache.setValue(groups, expireDate: now.addingTimeInterval(60 * 60))
+            self.cache.set(groups: groups, expireDate: now.addingTimeInterval(60 * 60))
 
             return groups
         }

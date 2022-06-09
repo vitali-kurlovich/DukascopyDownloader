@@ -88,13 +88,12 @@ extension DukascopyNIOClient {
 internal
 extension DukascopyNIOClient {
     func task(for request: HTTPClient.Request) -> EventLoopFuture<HTTPClient.Response> {
-        let key = RequestKey(request)
-        return cache.value(forKey: key).flatMapWithEventLoop { response, eventLoop -> EventLoopFuture<HTTPClient.Response> in
+        cache.response(for: request).flatMapWithEventLoop { response, eventLoop -> EventLoopFuture<HTTPClient.Response> in
             if let response = response {
                 return eventLoop.makeSucceededFuture(response)
             }
 
-            return self.client.execute(request: request).flatMapThrowing { response -> HTTPClient.Response in
+            return self.requestExecutor.execute(request: request).flatMapThrowing { response -> HTTPClient.Response in
 
                 let status = response.status
 
@@ -102,12 +101,12 @@ extension DukascopyNIOClient {
                     throw FetchTaskError.requestFailed(status)
                 }
 
-                let cost = response.body?.storageCapacity ?? 1
+                // TODO: need parse http-headers for check Cache-Control
 
                 let now = Date()
                 let expireDate = now.addingTimeInterval(5)
 
-                self.cache.setValue(response, forKey: key, expireDate: expireDate, cost: cost)
+                self.cache.set(response: response, for: request, expireDate: expireDate)
 
                 return response
             }

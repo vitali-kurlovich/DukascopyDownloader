@@ -2,11 +2,8 @@
 //  Created by Vitali Kurlovich on 18.05.22.
 //
 
-import AsyncHTTPClient
-
-import DukascopyModel
 import Foundation
-import KeyValueCache
+
 import Logging
 import NIO
 
@@ -23,19 +20,16 @@ final class DukascopyNIOClient {
     init(_ client: HTTPRequestExecutorImpl, eventLoopGroupProvider: ClientEventLoopGroupProvider) {
         self.eventLoopGroupProvider = eventLoopGroupProvider
 
-        self.client = client
+        requestExecutor = client
 
-        cache = .init(eventLoopGroupProvider: .shared(eventLoopGroupProvider.eventLoopGroup))
-        groupsCache = .init(eventLoopGroupProvider: .shared(eventLoopGroupProvider.eventLoopGroup))
+        cache = .init(eventLoopGroupProvider.eventLoopGroup)
     }
 
-    /// public let eventLoopGroup: EventLoopGroup
     internal let eventLoopGroupProvider: ClientEventLoopGroupProvider
 
-    internal let client: HTTPRequestExecutorImpl
+    internal let requestExecutor: HTTPRequestExecutorImpl
 
-    internal let cache: KeyValueCache<RequestKey, HTTPClient.Response>
-    internal let groupsCache: OneValueCache<[Group]>
+    internal let cache: ClientCache
 }
 
 public
